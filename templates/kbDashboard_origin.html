@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>我系雷锋——获取浙工大课表ICS文件</title>
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <el-header>
+            <h1>从正方教务获取你课表的日历文件</h1>
+        </el-header>
+        <el-main>
+            <el-form label-position="top" label-width="80px" :model="userForm">
+                <el-form-item label="学号（正方教务系统用户名）">
+                    <el-input v-model="userForm.id"></el-input>
+                </el-form-item>
+                <el-form-item label="密码（正方教务系统密码）">
+                    <el-input v-model="userForm.pass"></el-input>
+                    <span style="font-size: 12px;color: limegreen">✅ 请务必放心，该页面不会记录您的密码。</span>
+                </el-form-item>
+                <el-form-item label="验证码">
+                    <el-row type="flex" class="row-bg" justify="start">
+                        <el-col :span="5">
+                            <el-button type="primary" @click="onFetch" v-if="noCode">获取验证码</el-button>
+                            <img :src="kaptchaU" v-else/>
+                        </el-col>
+                        <el-col :span="19">
+                            <el-input v-model="userForm.code"></el-input>
+                        </el-col>
+                    </el-row>
+                </el-form-item>
+                <el-form-item>
+                    <el-row type="flex" class="row-bg" justify="end">
+                        <el-col :span="12">
+                            <el-button type="primary" @click="onSubmit">开始</el-button>
+                        </el-col>
+                    </el-row>
+
+                </el-form-item>
+            </el-form>
+            <el-dialog
+                    title="一切准备就绪"
+                    :visible.sync="dialogVisible"
+                    width="62%"
+                    :before-close="handleClose">
+                <el-input
+                        type="textarea"
+                        rows="10"
+                        placeholder="ICS文件信息"
+                        v-model="icsraw"
+                        readonly>
+                </el-input>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="thanks" type="danger" plain>投 币?</el-button>
+                    <el-button @click="helpme">帮 助</el-button>
+                    <el-button type="primary" @click="doDownload">下 载</el-button>
+                </span>
+            </el-dialog>
+        </el-main>
+        <el-footer>我系雷锋</el-footer>
+    </el-container>
+</div>
+</body>
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            visible: false,
+            userForm: {
+                id: '',
+                pass: '',
+                code: ''
+            },
+            jsid: '',
+            noCode: true,
+            kaptchaU: '',
+            dialogVisible: false,
+            icsraw: '',
+        },
+        methods: {
+            onSubmit() {
+                if (this.userForm.id.length == 12 && this.userForm.pass.length >= 6 && this.userForm.code.length == 6) {
+                    var self = this;
+                    var fd = new FormData();
+                    fd.append("username", self.userForm.id);
+                    fd.append("password", self.userForm.pass);
+                    fd.append("yzm", self.userForm.code);
+                    fd.append("jsid", self.jsid);
+                    let config = {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    };
+                    axios.post('http://kit.chng.fun/jhrlapis/login', fd, config)
+                        .then(function (response) {
+                            //console.log(response);
+                            if (response.data.status) {
+                                self.jsid = response.data.data;
+                                self.$message.success("登陆正方教务系统成功");
+                                var self2 = self;
+                                setTimeout(function () {
+                                    axios.get('http://kit.chng.fun/jhrlapis/getIcs?jsid='+self2.jsid).then(function (response) {
+                                        //console.log(response.data);
+                                        self2.dialogVisible = true;
+                                        self2.icsraw = response.data;
+                                    })
+                                        .catch(function (error) {
+                                            self2.$message.error('发生错误，请刷新页面重试');
+                                        });
+
+                                }, 1000);
+                            } else {
+                                self.$message.error(response.data.data);
+                                setTimeout(function () {
+                                    location.reload();
+                                }, 3000);
+                            }
+                        })
+                        .catch(function (error) {
+                            self.$message.error('登陆失败，请检查你的登陆信息是否正确');
+                            setTimeout(function () {
+                                location.reload();
+                            }, 3000);
+                        });
+                } else {
+                    this.$message.error('请输入正确的信息');
+                }
+            }
+            ,
+            onFetch() {
+                if (this.userForm.id.length == 0 || this.userForm.pass.length == 0) {
+                    this.$message('请先输入学号及密码，再获取验证码');
+                } else if (this.userForm.id.length == 12 && this.userForm.pass.length >= 6) {
+                    var self = this;
+                    axios.get('http://kit.chng.fun/jhrlapis/getStart')
+                        .then(function (response) {
+                            self.jsid = response.data.jsid;
+                            self.noCode = false;
+                            self.kaptchaU = 'http://kit.chng.fun/jhrlapis/getYzm?jsid=' + self.jsid;
+                        })
+                        .catch(function (error) {
+                            this.$message.error('发生错误，请刷新页面重试');
+                        });
+
+                } else {
+                    this.$message('请先输入正确的学号(12位)和密码(至少六位)');
+                }
+            },
+            handleClose(done) {
+                this.$confirm('确认关闭？').then(_ => {
+                    done();
+                    setTimeout(function () {
+                        location.reload();
+                    }, 1000);
+                }).catch(_ => {
+                });
+            },
+            downloadIcs(filename, text) {
+                var pom = document.createElement('a');
+                pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+                pom.setAttribute('download', filename);
+                if (document.createEvent) {
+                    var event = document.createEvent('MouseEvents');
+                    event.initEvent('click', true, true);
+                    pom.dispatchEvent(event);
+                } else {
+                    pom.click();
+                }
+            },
+            doDownload() {
+                this.downloadIcs("课表.ics", this.icsraw);
+            },
+            helpme(){
+                window.open("https://chng.fun/blog/ics-help/");
+            },
+            thanks(){
+                window.open("https://chng.fun/thanks");
+            }
+        }
+    })
+</script>
+</html>
