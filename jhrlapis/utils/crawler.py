@@ -23,7 +23,7 @@ class Crawler:
                                  requests.get(self.getSessionUrl).headers.get('Set-Cookie')).group(2)
         else:
             self.jsid = jsid
-        self.defaultHeader = {'Cookie': 'JSESSIONID=' + self.jsid + '; SL_GWPT_Show_Hide_tmp=1; SL_wptGlobTipTmp=1'}
+        self.defaultHeader = {'Cookie': 'JSESSIONID=' + self.jsid, 'Content-Length':'0'}
 
 
     def getNowTime(self):
@@ -77,12 +77,13 @@ class Crawler:
 
     def getKb(self,xn,xq):
         if xq == '1' :
-            xq = '3';
+            xq2 = '3';
         if xq == '2':
-            xq = '12';
+            xq2 = '12';
         if xq == '3':
-            xq = '16';
-        resl = requests.post(self.getkburl,data={'xnm':xn,'xqm':xq},headers=self.defaultHeader)
+            xq2 = '16';
+        resl = requests.post(self.getkburl,data={'xnm':xn,'xqm':xq2},headers=self.defaultHeader)
+        #resl = xq2
         # if not resl['kbList']:
         #     return False
         # else:

@@ -54,7 +54,15 @@
                         readonly>
                 </el-input>
                 <span slot="footer" class="dialog-footer">
-                    <el-button @click="thanks" type="danger" plain>投 币?</el-button>
+
+                    <el-popover
+                            placement="top"
+                            content="姥爷们若是能赏俩圆圆的东西那也是极好的呀↖(^ω^)↗"
+                            width="350"
+                            trigger="manual"
+                            v-model="visible_hint">
+                    <el-button @click="thanks" type="danger" plain slot="reference">投 币?</el-button>
+                    </el-popover>
                     <el-button @click="helpme">帮 助</el-button>
                     <el-button type="primary" @click="doDownload">下 载</el-button>
                 </span>
@@ -71,6 +79,9 @@
 
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script>
+    if ((navigator.userAgent.match(/(iPhone|iPod|Android|ios|iOS|iPad|Backerry|WebOS|Symbian|Windows Phone|Phone)/i))) {
+        alert("为了获得最佳体验，请在电脑端使用Chrome、Edge、Safari等现代浏览器访问");
+    }
     new Vue({
         el: '#app',
         data: {
@@ -85,9 +96,11 @@
             kaptchaU: '',
             dialogVisible: false,
             icsraw: '',
+            visible_hint: false,
         },
         methods: {
             onSubmit() {
+                //this.dialogVisible = true;
                 if (this.userForm.id.length == 12 && this.userForm.pass.length >= 6 && this.userForm.code.length == 6) {
                     var self = this;
                     var fd = new FormData();
@@ -108,7 +121,7 @@
                                 self.$message.success("登陆正方教务系统成功");
                                 var self2 = self;
                                 setTimeout(function () {
-                                    axios.get('http://kit.chng.fun/jhrlapis/getIcs?jsid='+self2.jsid).then(function (response) {
+                                    axios.get('http://kit.chng.fun/jhrlapis/getIcs?jsid=' + self2.jsid).then(function (response) {
                                         //console.log(response.data);
                                         self2.dialogVisible = true;
                                         self2.icsraw = response.data;
@@ -175,14 +188,15 @@
                 } else {
                     pom.click();
                 }
+                this.visible_hint = true;
             },
             doDownload() {
                 this.downloadIcs("课表.ics", this.icsraw);
             },
-            helpme(){
+            helpme() {
                 window.open("https://chng.fun/blog/ics-help/");
             },
-            thanks(){
+            thanks() {
                 window.open("https://chng.fun/thanks");
             }
         }

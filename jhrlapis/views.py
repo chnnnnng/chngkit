@@ -84,9 +84,10 @@ def getIcs(request):
         crawler = Crawler(jsid)
         kb = crawler.getKb(xn, xq)
         res = crawler.getIcs(kb)
-        calender = Calender()
-        calender.fomateCalender(res)
-        return HttpResponse(calender.getIcs())
+        #calender = Calender()
+        #calender.fomateCalender(res)
+        return Response(res)
+        #return HttpResponse(calender.getIcs())
     except:
         return HttpResponse(status=404)
 

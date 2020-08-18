@@ -20,6 +20,7 @@ from jhrlapis import views as jhrlapis_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('jhrlapis/', include('jhrlapis.urls')),
+    path('zjutapis/', include('zjutapis.urls')),
     path('kb',jhrlapis_views.getIcsDashboard),
     path('', include('home.urls'))
 ]
